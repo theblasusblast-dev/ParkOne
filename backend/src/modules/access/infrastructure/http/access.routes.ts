@@ -6,9 +6,11 @@ import { z } from '../../../../shared/zod';
 import { currentUserOf, type AuthGuards } from '../../../auth/infrastructure/http/auth.guards';
 import type { ReadPlateUseCase } from '../../application/read-plate.use-case';
 import type { RegisterEntryUseCase } from '../../application/register-entry.use-case';
+import type { RegisterManualEntryUseCase } from '../../application/register-manual-entry.use-case';
 import {
   EntryRequestSchema,
   EntryResultSchema,
+  ManualEntryRequestSchema,
   PlateReadingRequestSchema,
   PlateReadingResponseSchema,
 } from './access.schemas';
@@ -59,9 +61,32 @@ openApiRegistry.registerPath({
   },
 });
 
+openApiRegistry.registerPath({
+  method: 'post',
+  path: '/api/access/manual-entries',
+  tags: [TAGS.access.name],
+  summary: 'Registrar ingreso con lectura manual',
+  description:
+    'El empleado digita o corrige la placa cuando la cámara no la reconoce, o registra una placa extranjera. ' +
+    'Sigue las mismas reglas de cupo y cobro del ingreso normal, y el evento queda marcado como lectura manual ' +
+    'con el empleado que intervino (F-06).',
+  security: [{ bearerAuth: [] }],
+  request: { body: { content: json(ManualEntryRequestSchema) } },
+  responses: {
+    201: { description: 'Evento registrado con la decisión de la barrera.', content: json(EntryResultSchema) },
+    ...errorResponses({
+      400: 'Datos inválidos (VALIDATION_ERROR) o placa sin formato colombiano y no marcada como extranjera (INVALID_PLATE).',
+      401: 'Sin sesión (AUTH_REQUIRED) o sesión inválida.',
+      403: 'El empleado registra en otra sede (SITE_FORBIDDEN).',
+      404: 'No existe la sede (SITE_NOT_FOUND).',
+    }),
+  },
+});
+
 export interface AccessUseCases {
   readPlate: ReadPlateUseCase;
   registerEntry: RegisterEntryUseCase;
+  registerManualEntry: RegisterManualEntryUseCase;
 }
 
 export function createAccessRouter(useCases: AccessUseCases, guards: AuthGuards): Router {
@@ -80,6 +105,12 @@ export function createAccessRouter(useCases: AccessUseCases, guards: AuthGuards)
       manualRead: false,
       foreignPlate: false,
     });
+    res.status(201).json(body);
+  });
+
+  router.post('/manual-entries', guards.authenticate, async (req, res) => {
+    const input = ManualEntryRequestSchema.parse(req.body);
+    const body: z.infer<typeof EntryResultSchema> = await useCases.registerManualEntry.execute(currentUserOf(req), input);
     res.status(201).json(body);
   });
 

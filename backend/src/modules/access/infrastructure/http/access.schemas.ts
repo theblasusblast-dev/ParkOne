@@ -74,3 +74,19 @@ export const EntryResultSchema = openApiRegistry.register(
     reentry: z.boolean().openapi({ description: 'true si ya tenía cobro hoy: reingreso sin cobro nuevo (RN-03).', example: false }),
   }),
 );
+
+export const ManualEntryRequestSchema = openApiRegistry.register(
+  'ManualEntryRequest',
+  z.object({
+    siteId: z.uuid('El id de la sede no es válido.'),
+    plate: z.string().trim().min(1, 'La placa es obligatoria.').max(15).openapi({
+      description: 'Placa digitada o corregida por el empleado.',
+      example: 'ABC123',
+    }),
+    vehicleType: z.enum(VEHICLE_TYPES).openapi({ description: 'Tipo elegido por el empleado.', example: 'CAR' }),
+    foreignPlate: z.boolean().default(false).openapi({
+      description: 'true para placas extranjeras: no se valida el formato colombiano.',
+      example: false,
+    }),
+  }),
+);
