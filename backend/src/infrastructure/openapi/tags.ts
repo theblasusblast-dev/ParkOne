@@ -19,6 +19,10 @@ export const TAGS = {
     name: 'Empleados',
     description: 'Empleados de cada sede: alta, cambio de sede y activación.',
   },
+  rates: {
+    name: 'Tarifas y franjas',
+    description: 'Tarifas versionadas por tipo de vehículo y franja, y horarios de cada franja.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);
