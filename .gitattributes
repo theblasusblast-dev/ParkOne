@@ -1,0 +1,12 @@
+# En el repositorio todos los archivos de texto usan LF (formato Linux).
+* text=auto eol=lf
+
+# Los scripts de Windows sí necesitan CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binarios: Git no debe tocarlos.
+*.png binary
+*.jpg binary
+*.ico binary
+*.pdf binary
