@@ -1,0 +1,211 @@
+// Modelo de datos de ParkOne (PostgreSQL 16, Prisma 6).
+// Las reglas que se pueden garantizar en la base de datos se garantizan aquí,
+// 1. no solo en el código: un cobro por placa, sede y día operativo (RN-04),
+// 2. una referencia de pago irrepetible (idempotencia) y 3. una placa en un solo
+// espacio por sede (anti-passback).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EMPLOYEE
+}
+
+enum VehicleType {
+  CAR
+  MOTORCYCLE
+}
+
+enum SpotStatus {
+  FREE
+  OCCUPIED
+  DISABLED
+}
+
+enum Band {
+  DAY
+  NIGHT
+}
+
+enum Direction {
+  ENTRY
+  EXIT
+}
+
+enum ChargeStatus {
+  PENDING
+  PAID
+  VOIDED
+  EXPIRED
+}
+
+enum PaymentMethod {
+  CASH
+}
+
+/// Sede física del parqueadero. Las franjas son configuración de cada sede;
+/// el día operativo empieza con la franja diurna (S-02).
+model Site {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @unique
+  department     String
+  city           String
+  /// Inicio de la franja diurna y del día operativo, formato HH:MM.
+  dayBandStart   String   @default("06:00") @db.VarChar(5)
+  /// Inicio de la franja nocturna, formato HH:MM.
+  nightBandStart String   @default("18:00") @db.VarChar(5)
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @db.Timestamptz(3)
+
+  spots   ParkingSpot[]
+  users   User[]
+  rates   Rate[]
+  events  AccessEvent[]
+  charges Charge[]
+
+  @@map("sites")
+}
+
+/// Usuario del sistema. Un empleado trabaja en una sola sede; el
+/// administrador no tiene sede asignada.
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  fullName     String
+  email        String   @unique
+  passwordHash String
+  role         Role
+  siteId       String?  @db.Uuid
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now()) @db.Timestamptz(3)
+
+  site         Site?         @relation(fields: [siteId], references: [id])
+  payments     Payment[]
+  manualEvents AccessEvent[]
+
+  @@map("users")
+}
+
+/// Espacio físico de parqueo (C-01, M-01...). Los cupos salen de aquí.
+model ParkingSpot {
+  id             String      @id @default(uuid()) @db.Uuid
+  siteId         String      @db.Uuid
+  code           String      @db.VarChar(10)
+  vehicleType    VehicleType
+  status         SpotStatus  @default(FREE)
+  /// Motivo escrito por el empleado cuando inhabilita el espacio.
+  disabledReason String?
+  currentPlate   String?     @db.VarChar(10)
+  occupiedSince  DateTime?   @db.Timestamptz(3)
+
+  site   Site          @relation(fields: [siteId], references: [id])
+  events AccessEvent[]
+
+  @@unique([siteId, code])
+  /// Anti-passback: una placa ocupa como máximo un espacio por sede.
+  /// PostgreSQL permite varios NULL, así que los espacios libres no chocan.
+  @@unique([siteId, currentPlate])
+  @@index([siteId, vehicleType, status])
+  @@map("parking_spots")
+}
+
+/// Tarifa versionada (RN-07): un cambio crea una fila nueva y cierra la
+/// anterior con validTo. Los cobros guardan la tarifa con que se calcularon.
+model Rate {
+  id          String      @id @default(uuid()) @db.Uuid
+  siteId      String      @db.Uuid
+  vehicleType VehicleType
+  band        Band
+  /// Valor en pesos colombianos. Moto = 0 por defecto (RN-01), configurable.
+  amountCop   Int
+  validFrom   DateTime    @default(now()) @db.Timestamptz(3)
+  /// NULL mientras la tarifa está vigente.
+  validTo     DateTime?   @db.Timestamptz(3)
+
+  site    Site     @relation(fields: [siteId], references: [id])
+  charges Charge[]
+
+  @@index([siteId, vehicleType, band, validFrom])
+  @@map("rates")
+}
+
+/// Registro de cada paso por un carril, con la decisión de la barrera.
+model AccessEvent {
+  /// Lo puede generar el carril: si un evento se reenvía, no se duplica.
+  id             String      @id @default(uuid()) @db.Uuid
+  siteId         String      @db.Uuid
+  plate          String      @db.VarChar(10)
+  vehicleType    VehicleType
+  direction      Direction
+  occurredAt     DateTime    @default(now()) @db.Timestamptz(3)
+  /// Confianza de la lectura (0 a 1). NULL si se digitó a mano.
+  confidence     Float?
+  /// Texto de la región leído en la placa: "COLOMBIA" o un municipio.
+  plateRegion    String?
+  manualRead     Boolean     @default(false)
+  foreignPlate   Boolean     @default(false)
+  barrierOpened  Boolean
+  /// Explicación de la decisión, la misma que ve el operador en pantalla.
+  decisionReason String
+  spotId         String?     @db.Uuid
+  /// Empleado que digitó o validó la placa, si hubo intervención manual.
+  operatorId     String?     @db.Uuid
+
+  site     Site         @relation(fields: [siteId], references: [id])
+  spot     ParkingSpot? @relation(fields: [spotId], references: [id])
+  operator User?        @relation(fields: [operatorId], references: [id])
+
+  @@index([siteId, occurredAt])
+  @@index([plate])
+  @@map("access_events")
+}
+
+/// Cobro del día operativo (pase diario, S-03).
+model Charge {
+  id           String       @id @default(uuid()) @db.Uuid
+  siteId       String       @db.Uuid
+  plate        String       @db.VarChar(10)
+  vehicleType  VehicleType
+  /// Día operativo al que pertenece el cobro (no el día calendario).
+  operatingDay DateTime     @db.Date
+  band         Band
+  rateId       String       @db.Uuid
+  /// Copia del valor de la tarifa al momento de generar el cobro (RN-07).
+  amountCop    Int
+  status       ChargeStatus @default(PENDING)
+  voidReason   String?
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  paidAt       DateTime?    @db.Timestamptz(3)
+
+  site     Site      @relation(fields: [siteId], references: [id])
+  rate     Rate      @relation(fields: [rateId], references: [id])
+  payments Payment[]
+
+  /// RN-04: nunca dos cobros para la misma placa, sede y día operativo.
+  @@unique([plate, siteId, operatingDay])
+  @@index([siteId, status])
+  @@map("charges")
+}
+
+/// Pago de un cobro. La referencia única hace que registrar dos veces el
+/// mismo pago no lo duplique (idempotencia).
+model Payment {
+  id           String        @id @default(uuid()) @db.Uuid
+  chargeId     String        @db.Uuid
+  method       PaymentMethod @default(CASH)
+  amountCop    Int
+  reference    String        @unique
+  receivedById String        @db.Uuid
+  paidAt       DateTime      @default(now()) @db.Timestamptz(3)
+
+  charge     Charge @relation(fields: [chargeId], references: [id])
+  receivedBy User   @relation(fields: [receivedById], references: [id])
+
+  @@map("payments")
+}

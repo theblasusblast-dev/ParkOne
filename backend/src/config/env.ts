@@ -12,6 +12,9 @@ const EnvSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().int().min(1).max(65535).default(4000),
   CORS_ORIGIN: z.string().min(1).default('http://localhost:4200'),
+  DATABASE_URL: z
+    .string()
+    .startsWith('postgresql://', 'Debe ser una cadena de conexión de PostgreSQL'),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
