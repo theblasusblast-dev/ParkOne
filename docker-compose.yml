@@ -1,0 +1,27 @@
+# Servicios locales de ParkOne.
+# Por ahora solo la base de datos; la API y el frontend se agregan al empaquetar el MVP.
+name: parkone
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: parkone-db
+    restart: unless-stopped
+    environment:
+      # Los valores salen del archivo .env de la raíz (ver .env.example).
+      # La sintaxis :? detiene Docker con un mensaje claro si falta alguno.
+      POSTGRES_USER: ${POSTGRES_USER:?Falta POSTGRES_USER en .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Falta POSTGRES_PASSWORD en .env}
+      POSTGRES_DB: ${POSTGRES_DB:?Falta POSTGRES_DB en .env}
+    ports:
+      - "${POSTGRES_PORT:?Falta POSTGRES_PORT en .env}:5432"
+    volumes:
+      - parkone-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  parkone-db-data:
