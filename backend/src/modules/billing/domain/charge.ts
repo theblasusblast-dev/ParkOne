@@ -14,3 +14,19 @@ export interface Charge {
   amountCop: number;
   status: ChargeStatus;
 }
+
+/**
+ * Transiciones permitidas del ciclo de vida (patrón State simplificado):
+ * cada estado declara a cuáles puede pasar. Pagar un cobro anulado, por
+ * ejemplo, no está permitido.
+ */
+const TRANSITIONS: Record<ChargeStatus, readonly ChargeStatus[]> = {
+  PENDING: ['PAID', 'VOIDED', 'EXPIRED'],
+  PAID: ['EXPIRED'],
+  VOIDED: [],
+  EXPIRED: [],
+};
+
+export function canTransition(from: ChargeStatus, to: ChargeStatus): boolean {
+  return TRANSITIONS[from].includes(to);
+}

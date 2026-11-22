@@ -27,6 +27,10 @@ export const TAGS = {
     name: 'Carril',
     description: 'Lectura de placas, ingresos, salidas y barrera.',
   },
+  billing: {
+    name: 'Cobros y pagos',
+    description: 'Cobros del día operativo y pagos en efectivo desde la caja.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);

@@ -45,3 +45,14 @@ export function bandOf(instant: Date, dayBandStart: string, nightBandStart: stri
   const { minutes } = toLocal(instant);
   return minutes >= toMinutes(dayBandStart) && minutes < toMinutes(nightBandStart) ? 'DAY' : 'NIGHT';
 }
+
+/**
+ * Fin del día operativo: el inicio de la franja diurna del día siguiente.
+ * Hasta ese instante vale el pase de un cobro pagado (RN-03).
+ */
+export function operatingDayEnd(operatingDay: string, dayBandStart: string): Date {
+  const next = new Date(`${operatingDay}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
+  const localStart = Date.parse(`${next.toISOString().slice(0, 10)}T${dayBandStart}:00.000Z`);
+  return new Date(localStart - BOGOTA_OFFSET_MS);
+}
