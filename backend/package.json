@@ -5,7 +5,7 @@
   "description": "API REST de ParkOne: sistema de parqueadero con reconocimiento de placas",
   "main": "dist/main.js",
   "scripts": {
-    "dev": "tsx watch src/main.ts",
+    "dev": "tsx watch --clear-screen=false src/main.ts",
     "build": "tsc",
     "start": "node dist/main.js",
     "typecheck": "tsc --noEmit",
