@@ -4,6 +4,11 @@ import { env } from '../../config/env';
 import { openApiRegistry } from './registry';
 import { TAG_LIST } from './tags';
 
+// Importación sin nombres: carga el archivo solo para que registre los esquemas
+// compartidos (ErrorResponse). TypeScript elimina los imports que se usan solo
+// como tipos, así que este registro no puede depender de esos imports.
+import './common-schemas';
+
 /**
  * Construye el documento OpenAPI completo a partir de lo registrado.
  * Se llama al crear la app, cuando todos los archivos de rutas ya se cargaron
