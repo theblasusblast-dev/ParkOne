@@ -15,6 +15,10 @@ export const TAGS = {
     name: 'Sedes',
     description: 'Sedes del parqueadero, su mapa de espacios y su capacidad.',
   },
+  employees: {
+    name: 'Empleados',
+    description: 'Empleados de cada sede: alta, cambio de sede y activación.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);
