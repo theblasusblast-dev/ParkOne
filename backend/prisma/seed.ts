@@ -10,6 +10,7 @@
  */
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { DEFAULT_RATES } from '../src/modules/rates/domain/default-rates';
 import { buildSpotLayout } from '../src/modules/sites/domain/spot-layout';
 
 const prisma = new PrismaClient();
@@ -21,15 +22,6 @@ const DEMO_SITE = {
   carSpots: 12,
   motorcycleSpots: 8,
 };
-
-// Valores en pesos. La nocturna es menor que la diurna (RN-02) y la moto
-// tiene tarifa $0 (RN-01), que el administrador puede cambiar después.
-const DEMO_RATES = [
-  { vehicleType: 'CAR', band: 'DAY', amountCop: 8000 },
-  { vehicleType: 'CAR', band: 'NIGHT', amountCop: 5000 },
-  { vehicleType: 'MOTORCYCLE', band: 'DAY', amountCop: 0 },
-  { vehicleType: 'MOTORCYCLE', band: 'NIGHT', amountCop: 0 },
-] as const;
 
 async function main(): Promise<void> {
   const site = await prisma.site.upsert({
@@ -47,7 +39,7 @@ async function main(): Promise<void> {
   const existingRates = await prisma.rate.count({ where: { siteId: site.id } });
   if (existingRates === 0) {
     await prisma.rate.createMany({
-      data: DEMO_RATES.map((rate) => ({ ...rate, siteId: site.id })),
+      data: DEFAULT_RATES.map((rate) => ({ ...rate, siteId: site.id })),
     });
   }
 
