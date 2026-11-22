@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import type { ErrorRequestHandler, RequestHandler, Response } from 'express';
 import { AppError } from '../../shared/app-error';
 import { z } from '../../shared/zod';
@@ -43,6 +44,17 @@ export const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
         field: issue.path.join('.'),
         message: issue.message,
       })),
+    });
+    return;
+  }
+
+  // P2002: PostgreSQL rechazó un valor repetido en una columna única. Pasa
+  // cuando dos peticiones llegan al mismo tiempo y ambas superaron la
+  // validación previa; la restricción de la base de datos es la última barrera.
+  if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+    sendError(res, 409, {
+      code: 'CONFLICT',
+      message: 'Ya existe un registro con esos datos.',
     });
     return;
   }

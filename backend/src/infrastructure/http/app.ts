@@ -2,6 +2,7 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import { env } from '../../config/env';
 import { createAuthModule } from '../../modules/auth/auth.module';
+import { createSitesModule } from '../../modules/sites/sites.module';
 import { createDocsRouter } from '../openapi/swagger';
 import { errorHandler, notFoundHandler } from './error-handler';
 import { systemRouter } from './system.routes';
@@ -21,12 +22,14 @@ export function createApp(): Express {
   app.use(express.json());
 
   const auth = createAuthModule();
+  const sites = createSitesModule(auth.guards);
 
   app.get('/', (_req, res) => {
     res.redirect('/docs');
   });
   app.use('/api', systemRouter);
   app.use('/api/auth', auth.router);
+  app.use('/api/sites', sites.router);
   app.use('/docs', createDocsRouter());
 
   app.use(notFoundHandler);

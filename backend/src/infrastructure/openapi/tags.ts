@@ -11,6 +11,10 @@ export const TAGS = {
     name: 'Autenticación',
     description: 'Inicio de sesión y usuario de la sesión actual.',
   },
+  sites: {
+    name: 'Sedes',
+    description: 'Sedes del parqueadero, su mapa de espacios y su capacidad.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);
