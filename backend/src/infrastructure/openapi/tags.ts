@@ -23,6 +23,10 @@ export const TAGS = {
     name: 'Tarifas y franjas',
     description: 'Tarifas versionadas por tipo de vehículo y franja, y horarios de cada franja.',
   },
+  access: {
+    name: 'Carril',
+    description: 'Lectura de placas, ingresos, salidas y barrera.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);
