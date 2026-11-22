@@ -3,9 +3,15 @@ import { errorResponses } from '../../../../infrastructure/openapi/common-schema
 import { openApiRegistry } from '../../../../infrastructure/openapi/registry';
 import { TAGS } from '../../../../infrastructure/openapi/tags';
 import { z } from '../../../../shared/zod';
-import type { AuthGuards } from '../../../auth/infrastructure/http/auth.guards';
+import { currentUserOf, type AuthGuards } from '../../../auth/infrastructure/http/auth.guards';
 import type { ReadPlateUseCase } from '../../application/read-plate.use-case';
-import { PlateReadingRequestSchema, PlateReadingResponseSchema } from './access.schemas';
+import type { RegisterEntryUseCase } from '../../application/register-entry.use-case';
+import {
+  EntryRequestSchema,
+  EntryResultSchema,
+  PlateReadingRequestSchema,
+  PlateReadingResponseSchema,
+} from './access.schemas';
 
 const json = (schema: z.ZodType) => ({ 'application/json': { schema } });
 
@@ -29,8 +35,33 @@ openApiRegistry.registerPath({
   },
 });
 
+openApiRegistry.registerPath({
+  method: 'post',
+  path: '/api/access/entries',
+  tags: [TAGS.access.name],
+  summary: 'Registrar ingreso',
+  description:
+    'Registra la llegada de un vehículo. Valida en orden: anti-passback, cupo y cobro. ' +
+    'Si entra, le asigna el primer espacio libre de su tipo y, en su primer ingreso del día operativo, ' +
+    'genera el cobro de la franja actual (moto con tarifa $0: sin cobro). ' +
+    'Siempre registra el evento, también cuando la barrera no abre.',
+  security: [{ bearerAuth: [] }],
+  request: { body: { content: json(EntryRequestSchema) } },
+  responses: {
+    201: { description: 'Evento registrado con la decisión de la barrera.', content: json(EntryResultSchema) },
+    ...errorResponses({
+      400: 'Datos inválidos (VALIDATION_ERROR).',
+      401: 'Sin sesión (AUTH_REQUIRED) o sesión inválida.',
+      403: 'El empleado registra en otra sede (SITE_FORBIDDEN).',
+      404: 'No existe la sede (SITE_NOT_FOUND).',
+      409: 'La sede no tiene tarifa vigente (RATE_NOT_CONFIGURED) o el espacio se ocupó al mismo tiempo (SPOT_TAKEN).',
+    }),
+  },
+});
+
 export interface AccessUseCases {
   readPlate: ReadPlateUseCase;
+  registerEntry: RegisterEntryUseCase;
 }
 
 export function createAccessRouter(useCases: AccessUseCases, guards: AuthGuards): Router {
@@ -40,6 +71,16 @@ export function createAccessRouter(useCases: AccessUseCases, guards: AuthGuards)
     const input = PlateReadingRequestSchema.parse(req.body);
     const body: z.infer<typeof PlateReadingResponseSchema> = useCases.readPlate.execute(input);
     res.json(body);
+  });
+
+  router.post('/entries', guards.authenticate, async (req, res) => {
+    const input = EntryRequestSchema.parse(req.body);
+    const body: z.infer<typeof EntryResultSchema> = await useCases.registerEntry.execute(currentUserOf(req), {
+      ...input,
+      manualRead: false,
+      foreignPlate: false,
+    });
+    res.status(201).json(body);
   });
 
   return router;
