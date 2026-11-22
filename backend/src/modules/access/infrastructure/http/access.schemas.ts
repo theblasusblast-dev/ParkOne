@@ -33,3 +33,44 @@ export const PlateReadingResponseSchema = openApiRegistry.register(
     message: z.string().openapi({ example: 'Placa ABC123 reconocida (carro).' }),
   }),
 );
+
+const ChargeSchema = openApiRegistry.register(
+  'Charge',
+  z.object({
+    id: z.uuid(),
+    plate: z.string().openapi({ example: 'ABC123' }),
+    operatingDay: z.string().openapi({ description: 'Día operativo (06:00 a 05:59), AAAA-MM-DD.', example: '2026-11-22' }),
+    band: z.enum(['DAY', 'NIGHT']).openapi({ example: 'DAY' }),
+    amountCop: z.number().int().openapi({ example: 8000 }),
+    status: z.enum(['PENDING', 'PAID', 'VOIDED', 'EXPIRED']).openapi({ example: 'PENDING' }),
+  }),
+);
+
+export const EntryRequestSchema = openApiRegistry.register(
+  'EntryRequest',
+  z.object({
+    siteId: z.uuid('El id de la sede no es válido.'),
+    plate: z.string().trim().toUpperCase().min(5, 'La placa debe tener al menos 5 caracteres.').max(10).openapi({ example: 'ABC123' }),
+    vehicleType: z.enum(VEHICLE_TYPES).openapi({ example: 'CAR' }),
+    confidence: z.number().min(0).max(1).nullable().default(null).openapi({ example: 0.95 }),
+    region: z.string().trim().max(40).nullable().default(null).openapi({ example: 'MANIZALES' }),
+  }),
+);
+
+export const EntryResultSchema = openApiRegistry.register(
+  'EntryResult',
+  z.object({
+    eventId: z.uuid(),
+    outcome: z.enum(['ADMITTED', 'FULL', 'ALREADY_INSIDE']).openapi({
+      description: 'ADMITTED: entra · FULL: no hay cupo (LLENO) · ALREADY_INSIDE: la placa ya está adentro (anti-passback).',
+      example: 'ADMITTED',
+    }),
+    barrierOpened: z.boolean().openapi({ example: true }),
+    message: z.string().openapi({ example: 'Bienvenido. Diríjase al espacio C-01. Cobro diurno: $8.000.' }),
+    plate: z.string().openapi({ example: 'ABC123' }),
+    vehicleType: z.enum(VEHICLE_TYPES),
+    spot: z.object({ id: z.uuid(), code: z.string().openapi({ example: 'C-01' }) }).nullable(),
+    charge: ChargeSchema.nullable().openapi({ description: 'Cobro del día operativo; null si no aplica (moto con tarifa $0).' }),
+    reentry: z.boolean().openapi({ description: 'true si ya tenía cobro hoy: reingreso sin cobro nuevo (RN-03).', example: false }),
+  }),
+);
