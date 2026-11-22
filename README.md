@@ -73,10 +73,31 @@ Requisitos: Node.js 20.19 o superior, Docker Desktop abierto.
    ```
    cd backend
    npm install
+   npm run db:migrate
+   npm run db:seed
    npm run dev
    ```
 
+   `db:migrate` crea las tablas y `db:seed` carga una sede de prueba con sus espacios, tarifas y usuarios.
+
 La API queda en `http://localhost:4000` y la documentación interactiva (Swagger) en `http://localhost:4000/docs`.
+
+## Usuarios de prueba
+
+Los crea `npm run db:seed`:
+
+| Rol | Correo | Contraseña |
+| --- | --- | --- |
+| Administrador | admin@parkone.co | Admin123* |
+| Empleado (ParkOne Centro) | empleado@parkone.co | Empleado123* |
+
+## Comandos útiles de la base de datos
+
+| Comando (en `backend/`) | Qué hace |
+| --- | --- |
+| `npm run db:migrate` | Aplica las migraciones pendientes y regenera el cliente de Prisma. |
+| `npm run db:seed` | Carga los datos de prueba. Se puede repetir sin duplicar nada. |
+| `npm run db:studio` | Abre Prisma Studio en el navegador para ver y editar los registros. |
 
 ## Estado
 
