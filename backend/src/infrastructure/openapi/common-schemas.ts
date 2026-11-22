@@ -23,3 +23,19 @@ export const ErrorResponseSchema = openApiRegistry.register(
     }),
   }),
 );
+
+type ErrorStatus = 400 | 401 | 403 | 404 | 409;
+
+/**
+ * Respuestas de error para documentar un endpoint sin repetir el esquema:
+ *   responses: { 200: {...}, ...errorResponses({ 401: 'Sin sesión.' }) }
+ * Cada endpoint escribe su propia descripción, que es lo útil en Swagger.
+ */
+export function errorResponses(descriptions: Partial<Record<ErrorStatus, string>>) {
+  return Object.fromEntries(
+    Object.entries(descriptions).map(([status, description]) => [
+      status,
+      { description, content: { 'application/json': { schema: ErrorResponseSchema } } },
+    ]),
+  );
+}
