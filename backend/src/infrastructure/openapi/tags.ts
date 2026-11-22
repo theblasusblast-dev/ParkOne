@@ -7,6 +7,10 @@ export const TAGS = {
     name: 'Sistema',
     description: 'Estado y disponibilidad del servicio.',
   },
+  auth: {
+    name: 'Autenticación',
+    description: 'Inicio de sesión y usuario de la sesión actual.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);

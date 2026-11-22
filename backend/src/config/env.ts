@@ -15,6 +15,8 @@ const EnvSchema = z.object({
   DATABASE_URL: z
     .string()
     .startsWith('postgresql://', 'Debe ser una cadena de conexión de PostgreSQL'),
+  JWT_SECRET: z.string().min(32, 'Debe tener al menos 32 caracteres'),
+  JWT_EXPIRES_HOURS: z.coerce.number().int().min(1).max(72).default(8),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
