@@ -1,6 +1,7 @@
 import cors from 'cors';
 import express, { type Express } from 'express';
 import { env } from '../../config/env';
+import { createAccessModule } from '../../modules/access/access.module';
 import { createAuthModule } from '../../modules/auth/auth.module';
 import { createEmployeesModule } from '../../modules/employees/employees.module';
 import { createRatesModule } from '../../modules/rates/rates.module';
@@ -27,6 +28,7 @@ export function createApp(): Express {
   const sites = createSitesModule(auth.guards);
   const employees = createEmployeesModule(auth.guards);
   const rates = createRatesModule(auth.guards);
+  const access = createAccessModule(auth.guards);
 
   app.get('/', (_req, res) => {
     res.redirect('/docs');
@@ -34,6 +36,7 @@ export function createApp(): Express {
   app.use('/api', systemRouter);
   app.use('/api/auth', auth.router);
   app.use('/api/sites', sites.router, rates.router);
+  app.use('/api/access', access.router);
   app.use('/api/employees', employees.router);
   app.use('/docs', createDocsRouter());
 
