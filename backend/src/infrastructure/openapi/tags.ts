@@ -27,6 +27,10 @@ export const TAGS = {
     name: 'Carril',
     description: 'Lectura de placas, ingresos, salidas y barrera.',
   },
+  spots: {
+    name: 'Espacios',
+    description: 'Mapa de espacios de cada sede y su habilitación.',
+  },
   billing: {
     name: 'Cobros y pagos',
     description: 'Cobros del día operativo y pagos en efectivo desde la caja.',
