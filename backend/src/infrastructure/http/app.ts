@@ -7,6 +7,7 @@ import { createBillingModule } from '../../modules/billing/billing.module';
 import { createEmployeesModule } from '../../modules/employees/employees.module';
 import { createRatesModule } from '../../modules/rates/rates.module';
 import { createSitesModule } from '../../modules/sites/sites.module';
+import { createSpotsModule } from '../../modules/spots/spots.module';
 import type { InMemoryEventBus } from '../events/in-memory-event-bus';
 import { createDocsRouter } from '../openapi/swagger';
 import { monitorPage } from '../realtime/monitor.page';
@@ -33,13 +34,15 @@ export function createApp(events: InMemoryEventBus): Express {
   const rates = createRatesModule(auth.guards);
   const access = createAccessModule(auth.guards, events);
   const billing = createBillingModule(auth.guards, events);
+  const spots = createSpotsModule(auth.guards, events);
 
   app.get('/', (_req, res) => {
     res.redirect('/docs');
   });
   app.use('/api', systemRouter);
   app.use('/api/auth', auth.router);
-  app.use('/api/sites', sites.router, rates.router);
+  app.use('/api/sites', sites.router, rates.router, spots.bySite);
+  app.use('/api/spots', spots.spots);
   app.use('/api/access', access.router);
   app.use('/api/charges', billing.router);
   app.use('/api/employees', employees.router);
