@@ -3,7 +3,7 @@ import { AppError } from '../../../shared/app-error';
 import type { Band } from '../../../shared/domain/band';
 import type { VehicleType } from '../../../shared/domain/vehicle-type';
 import type { Charge } from '../../billing/domain/charge';
-import type { AccessEventData, AccessRepository, NewCharge, SiteSchedule, SpotRef } from '../application/ports';
+import type { AccessEventData, AccessRepository, NewCharge, Occupancy, SiteSchedule, SpotRef } from '../application/ports';
 
 const CHARGE_FIELDS = { id: true, plate: true, operatingDay: true, band: true, amountCop: true, status: true } as const;
 
@@ -22,8 +22,17 @@ export class PrismaAccessRepository implements AccessRepository {
     return this.db.site.findUnique({ where: { id: siteId }, select: { dayBandStart: true, nightBandStart: true } });
   }
 
-  findSpotOf(siteId: string, plate: string): Promise<SpotRef | null> {
-    return this.db.parkingSpot.findFirst({ where: { siteId, currentPlate: plate }, select: { id: true, code: true } });
+  async findOccupancy(siteId: string, plate: string): Promise<Occupancy | null> {
+    const spot = await this.db.parkingSpot.findFirst({
+      where: { siteId, currentPlate: plate },
+      select: { id: true, code: true, vehicleType: true, occupiedSince: true },
+    });
+    if (!spot) return null;
+    return {
+      spot: { id: spot.id, code: spot.code },
+      vehicleType: spot.vehicleType,
+      since: spot.occupiedSince ?? new Date(),
+    };
   }
 
   findFreeSpot(siteId: string, vehicleType: VehicleType): Promise<SpotRef | null> {
@@ -84,5 +93,32 @@ export class PrismaAccessRepository implements AccessRepository {
 
   async recordEvent(event: AccessEventData): Promise<string> {
     return (await this.db.accessEvent.create({ data: event, select: { id: true } })).id;
+  }
+
+  async findPendingCharges(siteId: string, plate: string): Promise<Charge[]> {
+    const rows = await this.db.charge.findMany({
+      where: { siteId, plate, status: 'PENDING' },
+      orderBy: { operatingDay: 'asc' },
+      select: CHARGE_FIELDS,
+    });
+    return rows.map(toCharge);
+  }
+
+  async createCharge(siteId: string, plate: string, vehicleType: VehicleType, charge: NewCharge): Promise<Charge> {
+    const row = await this.db.charge.create({
+      data: { siteId, plate, vehicleType, ...charge, operatingDay: toDbDate(charge.operatingDay) },
+      select: CHARGE_FIELDS,
+    });
+    return toCharge(row);
+  }
+
+  release(spotId: string, event: AccessEventData): Promise<string> {
+    return this.db.$transaction(async (tx) => {
+      await tx.parkingSpot.update({
+        where: { id: spotId },
+        data: { status: 'FREE', currentPlate: null, occupiedSince: null },
+      });
+      return (await tx.accessEvent.create({ data: event, select: { id: true } })).id;
+    });
   }
 }

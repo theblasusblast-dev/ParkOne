@@ -7,8 +7,9 @@ import { createBillingModule } from '../../modules/billing/billing.module';
 import { createEmployeesModule } from '../../modules/employees/employees.module';
 import { createRatesModule } from '../../modules/rates/rates.module';
 import { createSitesModule } from '../../modules/sites/sites.module';
-import { InMemoryEventBus } from '../events/in-memory-event-bus';
+import type { InMemoryEventBus } from '../events/in-memory-event-bus';
 import { createDocsRouter } from '../openapi/swagger';
+import { monitorPage } from '../realtime/monitor.page';
 import { errorHandler, notFoundHandler } from './error-handler';
 import { systemRouter } from './system.routes';
 
@@ -19,19 +20,18 @@ import { systemRouter } from './system.routes';
  * Los archivos de rutas se importan arriba, así que cuando se construye la
  * documentación ya registraron todos sus endpoints.
  */
-export function createApp(): Express {
+export function createApp(events: InMemoryEventBus): Express {
   const app = express();
 
   app.disable('x-powered-by');
   app.use(cors({ origin: env.CORS_ORIGIN }));
   app.use(express.json());
 
-  const events = new InMemoryEventBus();
   const auth = createAuthModule();
   const sites = createSitesModule(auth.guards);
   const employees = createEmployeesModule(auth.guards);
   const rates = createRatesModule(auth.guards);
-  const access = createAccessModule(auth.guards);
+  const access = createAccessModule(auth.guards, events);
   const billing = createBillingModule(auth.guards, events);
 
   app.get('/', (_req, res) => {
@@ -44,6 +44,7 @@ export function createApp(): Express {
   app.use('/api/charges', billing.router);
   app.use('/api/employees', employees.router);
   app.use('/docs', createDocsRouter());
+  app.get('/monitor', monitorPage);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

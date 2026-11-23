@@ -12,6 +12,12 @@ export interface SpotRef {
   code: string;
 }
 
+export interface Occupancy {
+  spot: SpotRef;
+  vehicleType: VehicleType;
+  since: Date;
+}
+
 export interface NewCharge {
   operatingDay: string;
   band: Band;
@@ -37,8 +43,8 @@ export interface AccessEventData {
 
 export interface AccessRepository {
   findSchedule(siteId: string): Promise<SiteSchedule | null>;
-  /** Espacio que ocupa la placa en la sede, si ya está adentro. */
-  findSpotOf(siteId: string, plate: string): Promise<SpotRef | null>;
+  /** Espacio que ocupa la placa en la sede y desde cuándo, si ya está adentro. */
+  findOccupancy(siteId: string, plate: string): Promise<Occupancy | null>;
   /** Primer espacio libre del tipo, en orden de código (C-01, C-02…). */
   findFreeSpot(siteId: string, vehicleType: VehicleType): Promise<SpotRef | null>;
   findCharge(siteId: string, plate: string, operatingDay: string): Promise<Charge | null>;
@@ -47,4 +53,8 @@ export interface AccessRepository {
   admit(spotId: string, event: AccessEventData, newCharge: NewCharge | null): Promise<{ eventId: string; charge: Charge | null }>;
   /** Registra un evento sin otros cambios (por ejemplo, un ingreso rechazado). */
   recordEvent(event: AccessEventData): Promise<string>;
+  findPendingCharges(siteId: string, plate: string): Promise<Charge[]>;
+  createCharge(siteId: string, plate: string, vehicleType: VehicleType, charge: NewCharge): Promise<Charge>;
+  /** Libera el espacio y registra el evento de salida, en una transacción. */
+  release(spotId: string, event: AccessEventData): Promise<string>;
 }
