@@ -6,10 +6,13 @@ import { z } from '../../../../shared/zod';
 import { currentUserOf, type AuthGuards } from '../../../auth/infrastructure/http/auth.guards';
 import type { ReadPlateUseCase } from '../../application/read-plate.use-case';
 import type { RegisterEntryUseCase } from '../../application/register-entry.use-case';
+import type { RegisterExitUseCase } from '../../application/register-exit.use-case';
 import type { RegisterManualEntryUseCase } from '../../application/register-manual-entry.use-case';
 import {
   EntryRequestSchema,
   EntryResultSchema,
+  ExitRequestSchema,
+  ExitResultSchema,
   ManualEntryRequestSchema,
   PlateReadingRequestSchema,
   PlateReadingResponseSchema,
@@ -83,10 +86,33 @@ openApiRegistry.registerPath({
   },
 });
 
+openApiRegistry.registerPath({
+  method: 'post',
+  path: '/api/access/exits',
+  tags: [TAGS.access.name],
+  summary: 'Registrar salida',
+  description:
+    'La barrera de salida abre solo si la placa no tiene cobros pendientes (RN-06); al salir se libera su espacio. ' +
+    'Si el vehículo sigue adentro desde un día operativo anterior, primero se genera el cobro diurno del día nuevo (S-05). ' +
+    'La decisión se emite en tiempo real por Socket.IO.',
+  security: [{ bearerAuth: [] }],
+  request: { body: { content: json(ExitRequestSchema) } },
+  responses: {
+    201: { description: 'Evento de salida registrado con la decisión de la barrera.', content: json(ExitResultSchema) },
+    ...errorResponses({
+      400: 'Datos inválidos (VALIDATION_ERROR).',
+      401: 'Sin sesión (AUTH_REQUIRED) o sesión inválida.',
+      403: 'El empleado opera otra sede (SITE_FORBIDDEN).',
+      404: 'No existe la sede (SITE_NOT_FOUND) o la placa no está adentro (VEHICLE_NOT_INSIDE).',
+    }),
+  },
+});
+
 export interface AccessUseCases {
   readPlate: ReadPlateUseCase;
   registerEntry: RegisterEntryUseCase;
   registerManualEntry: RegisterManualEntryUseCase;
+  registerExit: RegisterExitUseCase;
 }
 
 export function createAccessRouter(useCases: AccessUseCases, guards: AuthGuards): Router {
@@ -111,6 +137,12 @@ export function createAccessRouter(useCases: AccessUseCases, guards: AuthGuards)
   router.post('/manual-entries', guards.authenticate, async (req, res) => {
     const input = ManualEntryRequestSchema.parse(req.body);
     const body: z.infer<typeof EntryResultSchema> = await useCases.registerManualEntry.execute(currentUserOf(req), input);
+    res.status(201).json(body);
+  });
+
+  router.post('/exits', guards.authenticate, async (req, res) => {
+    const input = ExitRequestSchema.parse(req.body);
+    const body: z.infer<typeof ExitResultSchema> = await useCases.registerExit.execute(currentUserOf(req), input);
     res.status(201).json(body);
   });
 

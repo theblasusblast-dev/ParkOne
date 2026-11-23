@@ -1,5 +1,6 @@
 import { AppError } from '../../../shared/app-error';
 import type { Clock } from '../../../shared/domain/clock';
+import type { EventPublisher } from '../../../shared/domain/events';
 import { formatCop } from '../../../shared/domain/money';
 import type { VehicleType } from '../../../shared/domain/vehicle-type';
 import { assertSiteAccess } from '../../auth/domain/site-access';
@@ -47,6 +48,7 @@ export class RegisterEntryUseCase {
   constructor(
     private readonly access: AccessRepository,
     private readonly clock: Clock,
+    private readonly events: EventPublisher,
   ) {}
 
   async execute(user: PublicProfile, input: EntryInput): Promise<EntryResult> {
@@ -71,22 +73,27 @@ export class RegisterEntryUseCase {
       spotId,
       operatorId: input.manualRead ? user.id : null,
     });
-    const denied = async (outcome: EntryOutcome, message: string, spot: SpotRef | null): Promise<EntryResult> => ({
-      eventId: await this.access.recordEvent(event(false, message, spot?.id ?? null)),
-      outcome,
-      barrierOpened: false,
-      message,
-      plate: input.plate,
-      vehicleType: input.vehicleType,
-      spot,
-      charge: null,
-      reentry: false,
-    });
+    const announce = (outcome: EntryOutcome, barrierOpened: boolean, message: string, spot: SpotRef | null) =>
+      this.events.publish({
+        type: 'ACCESS_DECIDED',
+        siteId: input.siteId,
+        direction: 'ENTRY',
+        plate: input.plate,
+        outcome,
+        barrierOpened,
+        message,
+        spotCode: spot?.code ?? null,
+      });
+    const denied = async (outcome: EntryOutcome, message: string, spot: SpotRef | null): Promise<EntryResult> => {
+      const eventId = await this.access.recordEvent(event(false, message, spot?.id ?? null));
+      announce(outcome, false, message, spot);
+      return { eventId, outcome, barrierOpened: false, message, plate: input.plate, vehicleType: input.vehicleType, spot, charge: null, reentry: false };
+    };
 
     // 1. Anti-passback
-    const current = await this.access.findSpotOf(input.siteId, input.plate);
+    const current = await this.access.findOccupancy(input.siteId, input.plate);
     if (current) {
-      return denied('ALREADY_INSIDE', `La placa ${input.plate} ya figura adentro (espacio ${current.code}). Avise al empleado.`, current);
+      return denied('ALREADY_INSIDE', `La placa ${input.plate} ya figura adentro (espacio ${current.spot.code}). Avise al empleado.`, current.spot);
     }
 
     // 2. Cupo
@@ -111,6 +118,8 @@ export class RegisterEntryUseCase {
 
     const message = welcomeMessage(spot, existing, newCharge);
     const admitted = await this.access.admit(spot.id, event(true, message, spot.id), newCharge);
+    announce('ADMITTED', true, message, spot);
+    this.events.publish({ type: 'SPOTS_CHANGED', siteId: input.siteId });
 
     return {
       eventId: admitted.eventId,

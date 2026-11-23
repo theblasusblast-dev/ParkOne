@@ -79,3 +79,27 @@ export const ManualEntryRequestSchema = openApiRegistry.register(
     }),
   }),
 );
+
+export const ExitRequestSchema = openApiRegistry.register(
+  'ExitRequest',
+  z.object({
+    siteId: z.uuid('El id de la sede no es válido.'),
+    plate: z.string().trim().min(1, 'La placa es obligatoria.').max(15).openapi({ example: 'ABC123' }),
+  }),
+);
+
+export const ExitResultSchema = openApiRegistry.register(
+  'ExitResult',
+  z.object({
+    eventId: z.uuid(),
+    outcome: z.enum(['RELEASED', 'PENDING_CHARGE']).openapi({
+      description: 'RELEASED: sale y se libera el espacio · PENDING_CHARGE: tiene cobros pendientes y la barrera no abre.',
+      example: 'PENDING_CHARGE',
+    }),
+    barrierOpened: z.boolean().openapi({ example: false }),
+    message: z.string().openapi({ example: 'Cobro pendiente: $8.000. Pase por la caja antes de salir.' }),
+    plate: z.string().openapi({ example: 'ABC123' }),
+    spot: z.object({ id: z.uuid(), code: z.string().openapi({ example: 'C-01' }) }),
+    pendingCharges: z.array(ChargeSchema),
+  }),
+);
