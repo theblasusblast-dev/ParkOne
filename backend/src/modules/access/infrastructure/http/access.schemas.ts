@@ -1,6 +1,7 @@
 import { openApiRegistry } from '../../../../infrastructure/openapi/registry';
 import { VEHICLE_TYPES } from '../../../../shared/domain/vehicle-type';
 import { z } from '../../../../shared/zod';
+import { ChargeSchema } from '../../../billing/infrastructure/http/billing.schemas';
 import { MAX_READ_ATTEMPTS } from '../../application/read-plate.use-case';
 
 export const PlateReadingRequestSchema = openApiRegistry.register(
@@ -31,18 +32,6 @@ export const PlateReadingResponseSchema = openApiRegistry.register(
     attempt: z.number().int().openapi({ example: 1 }),
     maxAttempts: z.number().int().openapi({ example: MAX_READ_ATTEMPTS }),
     message: z.string().openapi({ example: 'Placa ABC123 reconocida (carro).' }),
-  }),
-);
-
-const ChargeSchema = openApiRegistry.register(
-  'Charge',
-  z.object({
-    id: z.uuid(),
-    plate: z.string().openapi({ example: 'ABC123' }),
-    operatingDay: z.string().openapi({ description: 'Día operativo (06:00 a 05:59), AAAA-MM-DD.', example: '2026-11-22' }),
-    band: z.enum(['DAY', 'NIGHT']).openapi({ example: 'DAY' }),
-    amountCop: z.number().int().openapi({ example: 8000 }),
-    status: z.enum(['PENDING', 'PAID', 'VOIDED', 'EXPIRED']).openapi({ example: 'PENDING' }),
   }),
 );
 

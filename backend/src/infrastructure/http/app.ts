@@ -3,9 +3,11 @@ import express, { type Express } from 'express';
 import { env } from '../../config/env';
 import { createAccessModule } from '../../modules/access/access.module';
 import { createAuthModule } from '../../modules/auth/auth.module';
+import { createBillingModule } from '../../modules/billing/billing.module';
 import { createEmployeesModule } from '../../modules/employees/employees.module';
 import { createRatesModule } from '../../modules/rates/rates.module';
 import { createSitesModule } from '../../modules/sites/sites.module';
+import { InMemoryEventBus } from '../events/in-memory-event-bus';
 import { createDocsRouter } from '../openapi/swagger';
 import { errorHandler, notFoundHandler } from './error-handler';
 import { systemRouter } from './system.routes';
@@ -24,11 +26,13 @@ export function createApp(): Express {
   app.use(cors({ origin: env.CORS_ORIGIN }));
   app.use(express.json());
 
+  const events = new InMemoryEventBus();
   const auth = createAuthModule();
   const sites = createSitesModule(auth.guards);
   const employees = createEmployeesModule(auth.guards);
   const rates = createRatesModule(auth.guards);
   const access = createAccessModule(auth.guards);
+  const billing = createBillingModule(auth.guards, events);
 
   app.get('/', (_req, res) => {
     res.redirect('/docs');
@@ -37,6 +41,7 @@ export function createApp(): Express {
   app.use('/api/auth', auth.router);
   app.use('/api/sites', sites.router, rates.router);
   app.use('/api/access', access.router);
+  app.use('/api/charges', billing.router);
   app.use('/api/employees', employees.router);
   app.use('/docs', createDocsRouter());
 
