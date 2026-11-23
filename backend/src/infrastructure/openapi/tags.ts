@@ -35,6 +35,10 @@ export const TAGS = {
     name: 'Cobros y pagos',
     description: 'Cobros del día operativo y pagos en efectivo desde la caja.',
   },
+  history: {
+    name: 'Historial',
+    description: 'Consultas de ingresos, salidas, cobros y pagos con filtros.',
+  },
 } as const;
 
 export const TAG_LIST = Object.values(TAGS);

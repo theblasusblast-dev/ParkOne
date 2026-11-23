@@ -4,6 +4,7 @@ import { env } from '../../config/env';
 import { createAccessModule } from '../../modules/access/access.module';
 import { createAuthModule } from '../../modules/auth/auth.module';
 import { createBillingModule } from '../../modules/billing/billing.module';
+import { createHistoryModule } from '../../modules/history/history.module';
 import { createEmployeesModule } from '../../modules/employees/employees.module';
 import { createRatesModule } from '../../modules/rates/rates.module';
 import { createSitesModule } from '../../modules/sites/sites.module';
@@ -35,6 +36,7 @@ export function createApp(events: InMemoryEventBus): Express {
   const access = createAccessModule(auth.guards, events);
   const billing = createBillingModule(auth.guards, events);
   const spots = createSpotsModule(auth.guards, events);
+  const history = createHistoryModule(auth.guards);
 
   app.get('/', (_req, res) => {
     res.redirect('/docs');
@@ -43,6 +45,7 @@ export function createApp(events: InMemoryEventBus): Express {
   app.use('/api/auth', auth.router);
   app.use('/api/sites', sites.router, rates.router, spots.bySite);
   app.use('/api/spots', spots.spots);
+  app.use('/api/history', history.router);
   app.use('/api/access', access.router);
   app.use('/api/charges', billing.router);
   app.use('/api/employees', employees.router);
