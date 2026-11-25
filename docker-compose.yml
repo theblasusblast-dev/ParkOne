@@ -1,5 +1,8 @@
-# Servicios locales de ParkOne.
-# Por ahora solo la base de datos; la API y el frontend se agregan al empaquetar el MVP.
+# ParkOne completo con un solo comando:   docker compose up -d --build
+#   Aplicación:     http://localhost:8080
+#   API y Swagger:  http://localhost:4000/docs
+#
+# Durante el desarrollo se levanta solo la base de datos:   docker compose up -d db
 name: parkone
 
 services:
@@ -22,6 +25,33 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+
+  api:
+    build: ./backend
+    container_name: parkone-api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CORS_ORIGIN: http://localhost:8080
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      JWT_SECRET: ${JWT_SECRET:?Falta JWT_SECRET en .env}
+      JWT_EXPIRES_HOURS: 8
+      PLATE_CONFIDENCE_THRESHOLD: 0.8
+    ports:
+      - "4000:4000"
+
+  web:
+    build: ./frontend
+    container_name: parkone-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
 
 volumes:
   parkone-db-data:
