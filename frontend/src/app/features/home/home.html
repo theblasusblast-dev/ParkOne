@@ -1,0 +1,35 @@
+@if (auth.user(); as user) {
+  <h1 class="page-title">Hola, {{ user.fullName }}</h1>
+  <p class="page-subtitle">
+    {{ user.role === 'ADMIN' ? 'Administras todas las sedes de ParkOne.' : 'Trabajas en ' + user.site?.name + '.' }}
+  </p>
+}
+
+<div class="grid">
+  <div class="card">
+    <div class="muted">API</div>
+    @if (health(); as h) {
+      <h2 style="margin-top: 8px">{{ h.service }} <span class="muted">v{{ h.version }}</span></h2>
+      <span class="badge" [class.badge-ok]="h.status === 'ok'" [class.badge-bad]="h.status !== 'ok'" style="margin-top: 10px">
+        {{ h.status === 'ok' ? 'En línea' : 'Con fallas' }}
+      </span>
+    } @else if (apiDown()) {
+      <h2 style="margin-top: 8px">Sin conexión</h2>
+      <span class="badge badge-bad" style="margin-top: 10px">Fuera de línea</span>
+    } @else {
+      <p class="muted">Consultando…</p>
+    }
+  </div>
+
+  <div class="card">
+    <div class="muted">Base de datos</div>
+    @if (health(); as h) {
+      <h2 style="margin-top: 8px">PostgreSQL</h2>
+      <span class="badge" [class.badge-ok]="h.database === 'up'" [class.badge-bad]="h.database !== 'up'" style="margin-top: 10px">
+        {{ h.database === 'up' ? 'Conectada' : 'Sin conexión' }}
+      </span>
+    } @else {
+      <p class="muted">—</p>
+    }
+  </div>
+</div>
