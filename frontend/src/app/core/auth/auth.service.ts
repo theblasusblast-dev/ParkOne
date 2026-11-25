@@ -59,10 +59,10 @@ export class AuthService {
   }
 
   /**
-   * Página a la que entra cada rol después del login. Por ahora ambos van a
-   * Inicio; el mapa (empleado) y el panel (administrador) cambian este destino.
+   * Página a la que entra cada rol después del login: el empleado, al mapa de
+   * su sede; el administrador, a Inicio (su panel llega en HU-16).
    */
-  homeFor(_user: UserProfile): string {
-    return '/inicio';
+  homeFor(user: UserProfile): string {
+    return user.role === 'EMPLOYEE' ? '/mapa' : '/inicio';
   }
 }
