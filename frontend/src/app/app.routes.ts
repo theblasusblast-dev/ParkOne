@@ -1,5 +1,8 @@
 import { Routes } from '@angular/router';
-import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { authGuard, guestGuard, roleGuard } from './core/auth/auth.guards';
+import { AdminEmployees } from './features/admin/admin-employees';
+import { AdminRates } from './features/admin/admin-rates';
+import { AdminSites } from './features/admin/admin-sites';
 import { Cashier } from './features/cashier/cashier';
 import { History } from './features/history/history';
 import { Home } from './features/home/home';
@@ -20,6 +23,16 @@ export const routes: Routes = [
       { path: 'carril', component: Lane, title: 'Carril · ParkOne' },
       { path: 'caja', component: Cashier, title: 'Caja · ParkOne' },
       { path: 'historial', component: History, title: 'Historial · ParkOne' },
+      {
+        path: 'admin',
+        canActivate: [roleGuard('ADMIN')],
+        children: [
+          { path: 'sedes', component: AdminSites, title: 'Sedes · ParkOne' },
+          { path: 'empleados', component: AdminEmployees, title: 'Empleados · ParkOne' },
+          { path: 'tarifas', component: AdminRates, title: 'Tarifas · ParkOne' },
+          { path: '', pathMatch: 'full', redirectTo: 'sedes' },
+        ],
+      },
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
     ],
   },

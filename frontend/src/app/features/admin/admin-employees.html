@@ -1,0 +1,60 @@
+<h1 class="page-title">Empleados</h1>
+<p class="page-subtitle">Cada empleado opera una sola sede. Desactivarlo le cierra el acceso de inmediato.</p>
+
+@if (success(); as message) { <div class="alert alert-success">{{ message }}</div> }
+@if (error(); as message) { <div class="alert alert-error">{{ message }}</div> }
+
+<div class="admin-grid">
+  <form class="card" [formGroup]="form" (ngSubmit)="create()">
+    <h3 style="margin-bottom: 14px">Nuevo empleado</h3>
+    <div class="field">
+      <label for="fullName">Nombre completo</label>
+      <input id="fullName" formControlName="fullName" placeholder="Laura Gómez" />
+    </div>
+    <div class="field">
+      <label for="email">Correo</label>
+      <input id="email" type="email" formControlName="email" placeholder="laura@parkone.co" />
+    </div>
+    <div class="field">
+      <label for="password">Contraseña inicial</label>
+      <input id="password" type="password" formControlName="password" />
+      @if (form.controls.password.touched && form.controls.password.invalid) {
+        <span class="hint">Mínimo 8 caracteres.</span>
+      }
+    </div>
+    <div class="field">
+      <label for="siteId">Sede</label>
+      <select id="siteId" formControlName="siteId">
+        <option value="" disabled>Elige una sede</option>
+        @for (site of sites(); track site.id) { <option [value]="site.id">{{ site.name }}</option> }
+      </select>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Crear empleado</button>
+  </form>
+
+  <div class="card" style="padding: 0; overflow-x: auto">
+    <table class="table">
+      <thead><tr><th>Empleado</th><th>Sede</th><th>Estado</th><th></th></tr></thead>
+      <tbody>
+        @for (employee of employees(); track employee.id) {
+          <tr>
+            <td><strong>{{ employee.fullName }}</strong><div class="muted">{{ employee.email }}</div></td>
+            <td>
+              <select class="site-select" [value]="employee.site.id" (change)="moveTo(employee, $any($event.target).value)">
+                @for (site of sites(); track site.id) { <option [value]="site.id">{{ site.name }}</option> }
+              </select>
+            </td>
+            <td><span class="badge" [class.badge-ok]="employee.active" [class.badge-bad]="!employee.active">{{ employee.active ? 'Activo' : 'Inactivo' }}</span></td>
+            <td>
+              <button class="btn" [class.btn-danger]="employee.active" (click)="toggle(employee)">
+                {{ employee.active ? 'Desactivar' : 'Activar' }}
+              </button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="muted">Aún no hay empleados.</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

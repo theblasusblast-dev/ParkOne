@@ -140,3 +140,45 @@ export interface PaymentRow {
   band: Band;
   receivedByName: string;
 }
+
+export interface SpotCounts {
+  total: number;
+  free: number;
+  occupied: number;
+  disabled: number;
+}
+
+export interface SiteSummary {
+  id: string;
+  name: string;
+  department: string;
+  city: string;
+  dayBandStart: string;
+  nightBandStart: string;
+  active: boolean;
+  capacity: Record<VehicleType, SpotCounts>;
+}
+
+export interface Employee {
+  id: string;
+  fullName: string;
+  email: string;
+  active: boolean;
+  site: { id: string; name: string };
+}
+
+export interface Rate {
+  id: string;
+  vehicleType: VehicleType;
+  band: Band;
+  amountCop: number;
+  validFrom: string;
+  validTo: string | null;
+}
+
+export interface SiteRates {
+  siteId: string;
+  dayBandStart: string;
+  nightBandStart: string;
+  rates: Rate[];
+}

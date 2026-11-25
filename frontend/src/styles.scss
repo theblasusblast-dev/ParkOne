@@ -221,3 +221,9 @@ table.table {
 /* Historial (HU-17) */
 .toolbar input[type='date'] { color-scheme: dark; }
 .pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin-top: 14px; }
+
+/* Administración (HU-16) */
+.admin-grid { display: grid; gap: 16px; grid-template-columns: minmax(280px, 380px) 1fr; align-items: start; }
+@media (max-width: 900px) { .admin-grid { grid-template-columns: 1fr; } }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input[type='time'] { color-scheme: dark; }

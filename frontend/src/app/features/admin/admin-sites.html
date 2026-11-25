@@ -1,0 +1,54 @@
+<h1 class="page-title">Sedes</h1>
+<p class="page-subtitle">Crea sedes en cualquier ciudad del país; el mapa de espacios se genera solo.</p>
+
+<div class="admin-grid">
+  <form class="card" [formGroup]="form" (ngSubmit)="create()">
+    <h3 style="margin-bottom: 14px">Nueva sede</h3>
+    @if (success(); as message) { <div class="alert alert-success">{{ message }}</div> }
+    @if (error(); as message) { <div class="alert alert-error">{{ message }}</div> }
+
+    <div class="field">
+      <label for="name">Nombre</label>
+      <input id="name" formControlName="name" placeholder="ParkOne Norte" />
+    </div>
+    <div class="field">
+      <label for="department">Departamento</label>
+      <input id="department" formControlName="department" list="departments" placeholder="Caldas" />
+      <datalist id="departments">
+        @for (department of departments; track department) { <option [value]="department"></option> }
+      </datalist>
+    </div>
+    <div class="field">
+      <label for="city">Ciudad o municipio</label>
+      <input id="city" formControlName="city" placeholder="Manizales" />
+    </div>
+    <div class="two">
+      <div class="field">
+        <label for="carSpots">Espacios de carro</label>
+        <input id="carSpots" type="number" min="0" max="200" formControlName="carSpots" />
+      </div>
+      <div class="field">
+        <label for="motorcycleSpots">Espacios de moto</label>
+        <input id="motorcycleSpots" type="number" min="0" max="200" formControlName="motorcycleSpots" />
+      </div>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Crear sede</button>
+  </form>
+
+  <div class="card" style="padding: 0; overflow-x: auto">
+    <table class="table">
+      <thead><tr><th>Sede</th><th>Ubicación</th><th>Carros libres</th><th>Motos libres</th><th>Franjas</th></tr></thead>
+      <tbody>
+        @for (site of sites(); track site.id) {
+          <tr>
+            <td><strong>{{ site.name }}</strong></td>
+            <td class="muted">{{ site.city }}, {{ site.department }}</td>
+            <td>{{ site.capacity.CAR.free }} / {{ site.capacity.CAR.total }}</td>
+            <td>{{ site.capacity.MOTORCYCLE.free }} / {{ site.capacity.MOTORCYCLE.total }}</td>
+            <td class="muted">{{ site.dayBandStart }} · {{ site.nightBandStart }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
