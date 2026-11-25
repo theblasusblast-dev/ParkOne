@@ -10,4 +10,6 @@ export interface NavItem {
 /** Menú lateral. Cada pantalla nueva agrega aquí su enlace. */
 export const NAVIGATION: NavItem[] = [
   { label: 'Inicio', icon: '◎', path: '/inicio', roles: ['ADMIN', 'EMPLOYEE'] },
+  { label: 'Mapa', icon: '▦', path: '/mapa', roles: ['ADMIN', 'EMPLOYEE'] },
+  { label: 'Carril', icon: '⇄', path: '/carril', roles: ['ADMIN', 'EMPLOYEE'] },
 ];

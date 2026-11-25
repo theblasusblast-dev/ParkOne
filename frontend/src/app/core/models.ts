@@ -41,3 +41,53 @@ export type RealtimeEvent =
       spotCode: string | null;
     }
   | { type: 'SPOTS_CHANGED'; siteId: string };
+
+export type Band = 'DAY' | 'NIGHT';
+export type ChargeStatus = 'PENDING' | 'PAID' | 'VOIDED' | 'EXPIRED';
+export type SpotStatus = 'FREE' | 'OCCUPIED' | 'DISABLED';
+
+export interface SiteOption {
+  id: string;
+  name: string;
+  city: string;
+}
+
+export interface Charge {
+  id: string;
+  plate: string;
+  operatingDay: string;
+  band: Band;
+  amountCop: number;
+  status: ChargeStatus;
+}
+
+export interface PlateDecision {
+  outcome: 'ACCEPTED' | 'RETRY' | 'MANUAL_REVIEW';
+  plate: string | null;
+  vehicleType: VehicleType | null;
+  attempt: number;
+  maxAttempts: number;
+  message: string;
+}
+
+export interface AccessResult {
+  outcome: string;
+  barrierOpened: boolean;
+  message: string;
+  plate: string;
+  spot: { id: string; code: string } | null;
+}
+
+export interface Spot {
+  id: string;
+  code: string;
+  vehicleType: VehicleType;
+  status: SpotStatus;
+  disabledReason: string | null;
+  occupant: {
+    plate: string;
+    since: string;
+    minutesParked: number;
+    charge: { amountCop: number; band: Band; status: ChargeStatus } | null;
+  } | null;
+}

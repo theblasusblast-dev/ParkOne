@@ -1,0 +1,113 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Carril</h1>
+    <p class="page-subtitle">Cámara simulada y barrera en tiempo real.</p>
+  </div>
+  <app-site-picker />
+</div>
+
+<div class="lane-grid">
+  <section class="card">
+    <h3>Cámara simulada</h3>
+
+    <div class="segmented" style="margin: 14px 0 18px">
+      <button type="button" [class.active]="direction() === 'ENTRY'" (click)="direction.set('ENTRY')">Entrada</button>
+      <button type="button" [class.active]="direction() === 'EXIT'" (click)="direction.set('EXIT')">Salida</button>
+    </div>
+
+    <div class="field">
+      <label>Vehículos de prueba</label>
+      <div class="chips">
+        @for (sample of samples; track sample.label) {
+          <button type="button" class="chip" (click)="useSample(sample)">{{ sample.label }}</button>
+        }
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="plate">Texto leído en la placa</label>
+      <input id="plate" [ngModel]="plate()" (ngModelChange)="plate.set($event)" placeholder="ABC123" />
+    </div>
+
+    <div class="field">
+      <label for="region">Región impresa (COLOMBIA en motos, municipio en carros)</label>
+      <input id="region" [ngModel]="region()" (ngModelChange)="region.set($event)" placeholder="MANIZALES" />
+    </div>
+
+    <div class="field">
+      <label for="quality">Calidad de la imagen</label>
+      <select id="quality" [ngModel]="quality()" (ngModelChange)="quality.set($event)">
+        @for (entry of qualities; track entry[0]) {
+          <option [value]="entry[0]">{{ entry[1].label }} (confianza {{ entry[1].confidence }})</option>
+        }
+      </select>
+    </div>
+
+    <button class="btn btn-primary btn-block" (click)="pass()" [disabled]="busy() || !site.siteId()">
+      {{ direction() === 'ENTRY' ? 'Llega un vehículo' : 'Vehículo en la salida' }}
+    </button>
+  </section>
+
+  <section class="card barrier-card" [class]="'state-' + state()">
+    <div class="screen">
+      <div class="screen-label">{{ direction() === 'ENTRY' ? 'ENTRADA' : 'SALIDA' }}</div>
+      @if (full()) {
+        <div class="screen-big">LLENO</div>
+      } @else if (state() === 'OPEN') {
+        <div class="screen-big">ADELANTE</div>
+      } @else if (state() === 'CLOSED') {
+        <div class="screen-big">ALTO</div>
+      } @else if (state() === 'MANUAL') {
+        <div class="screen-big">ESPERE</div>
+      }
+      <div class="screen-message">{{ message() }}</div>
+    </div>
+
+    <div class="barrier" [class.open]="state() === 'OPEN'">
+      <div class="post"></div>
+      <div class="arm"></div>
+    </div>
+
+    @if (state() === 'MANUAL') {
+      <div class="manual">
+        <h3>Validación del empleado</h3>
+        <div class="field">
+          <label for="manualPlate">Placa</label>
+          <input id="manualPlate" [ngModel]="manualPlate()" (ngModelChange)="manualPlate.set($event)" />
+        </div>
+        @if (direction() === 'ENTRY') {
+          <div class="field">
+            <label for="manualType">Tipo de vehículo</label>
+            <select id="manualType" [ngModel]="manualType()" (ngModelChange)="manualType.set($event)">
+              <option value="CAR">Carro</option>
+              <option value="MOTORCYCLE">Moto</option>
+            </select>
+          </div>
+          <label class="check">
+            <input type="checkbox" [ngModel]="manualForeign()" (ngModelChange)="manualForeign.set($event)" />
+            Placa extranjera
+          </label>
+        }
+        <button class="btn btn-primary btn-block" (click)="submitManual()" [disabled]="busy()">Confirmar</button>
+      </div>
+    }
+
+    @if (state() === 'OPEN' || state() === 'CLOSED') {
+      <button class="btn btn-ghost btn-block" style="margin-top: 14px" (click)="reset()">Siguiente vehículo</button>
+    }
+  </section>
+
+  <section class="card">
+    <h3>Actividad de la sede</h3>
+    <p class="muted" style="font-size: 0.85rem">En tiempo real, de todos los carriles.</p>
+    <ul class="activity">
+      @for (item of activity(); track item.time) {
+        <li [class.bad]="!item.ok">
+          <span class="muted">{{ item.time.toLocaleTimeString() }}</span> {{ item.text }}
+        </li>
+      } @empty {
+        <li class="muted">Sin movimientos todavía.</li>
+      }
+    </ul>
+  </section>
+</div>
