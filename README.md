@@ -99,6 +99,16 @@ Los crea `npm run db:seed`:
 | `npm run db:seed` | Carga los datos de prueba. Se puede repetir sin duplicar nada. |
 | `npm run db:studio` | Abre Prisma Studio en el navegador para ver y editar los registros. |
 
+## Pruebas automatizadas
+
+En `backend/`:
+
+```
+npm test
+```
+
+Ejecuta 27 pruebas sin base de datos (repositorios en memoria y reloj simulado): los 9 escenarios del documento de contexto, RN-02, RN-04, idempotencia del pago, cupos, anti-passback, clasificación de placas y calendario operativo.
+
 ## Estado
 
 En construcción: base del backend lista; los módulos de negocio se agregan historia por historia.
