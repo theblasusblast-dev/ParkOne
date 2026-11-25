@@ -14,4 +14,7 @@ export const NAVIGATION: NavItem[] = [
   { label: 'Carril', icon: '⇄', path: '/carril', roles: ['ADMIN', 'EMPLOYEE'] },
   { label: 'Caja', icon: '$', path: '/caja', roles: ['ADMIN', 'EMPLOYEE'] },
   { label: 'Historial', icon: '☰', path: '/historial', roles: ['ADMIN', 'EMPLOYEE'] },
+  { label: 'Sedes', icon: '⌂', path: '/admin/sedes', roles: ['ADMIN'] },
+  { label: 'Empleados', icon: '☺', path: '/admin/empleados', roles: ['ADMIN'] },
+  { label: 'Tarifas', icon: '⏱', path: '/admin/tarifas', roles: ['ADMIN'] },
 ];

@@ -60,9 +60,9 @@ export class AuthService {
 
   /**
    * Página a la que entra cada rol después del login: el empleado, al mapa de
-   * su sede; el administrador, a Inicio (su panel llega en HU-16).
+   * su sede; el administrador, a su panel de sedes.
    */
   homeFor(user: UserProfile): string {
-    return user.role === 'EMPLOYEE' ? '/mapa' : '/inicio';
+    return user.role === 'EMPLOYEE' ? '/mapa' : '/admin/sedes';
   }
 }

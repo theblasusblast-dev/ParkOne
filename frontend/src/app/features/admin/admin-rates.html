@@ -1,0 +1,67 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Tarifas y franjas</h1>
+    <p class="page-subtitle">La nocturna siempre debe ser menor que la diurna. La moto en $0 no paga.</p>
+  </div>
+  <app-site-picker />
+</div>
+
+@if (success(); as message) { <div class="alert alert-success">{{ message }}</div> }
+@if (error(); as message) { <div class="alert alert-error">{{ message }}</div> }
+
+<div class="admin-grid">
+  <div>
+    <form class="card" (ngSubmit)="saveRates()">
+      <h3 style="margin-bottom: 14px">Tarifas vigentes</h3>
+      @for (type of types; track type) {
+        <div class="muted" style="margin-bottom: 6px">{{ labels.vehicle[type] }}</div>
+        <div class="two">
+          <div class="field">
+            <label [for]="type + '-day'">Diurna (COP)</label>
+            <input [id]="type + '-day'" [name]="type + '-day'" type="number" min="0" step="500"
+              [ngModel]="rates()[type].day" (ngModelChange)="setRate(type, 'day', $event)" />
+          </div>
+          <div class="field">
+            <label [for]="type + '-night'">Nocturna (COP)</label>
+            <input [id]="type + '-night'" [name]="type + '-night'" type="number" min="0" step="500"
+              [ngModel]="rates()[type].night" (ngModelChange)="setRate(type, 'night', $event)" />
+          </div>
+        </div>
+      }
+      <button class="btn btn-primary btn-block" type="submit">Guardar tarifas</button>
+    </form>
+
+    <form class="card" style="margin-top: 16px" (ngSubmit)="saveBands()">
+      <h3 style="margin-bottom: 14px">Franjas horarias</h3>
+      <div class="two">
+        <div class="field">
+          <label for="day">Inicio diurna (y del día operativo)</label>
+          <input id="day" name="day" type="time" [ngModel]="bands().dayBandStart" (ngModelChange)="setBand('dayBandStart', $event)" />
+        </div>
+        <div class="field">
+          <label for="night">Inicio nocturna</label>
+          <input id="night" name="night" type="time" [ngModel]="bands().nightBandStart" (ngModelChange)="setBand('nightBandStart', $event)" />
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Guardar franjas</button>
+    </form>
+  </div>
+
+  <div class="card" style="padding: 0; overflow-x: auto">
+    <h3 style="padding: 16px 16px 0">Historial de versiones</h3>
+    <table class="table">
+      <thead><tr><th>Vehículo</th><th>Franja</th><th>Valor</th><th>Desde</th><th>Estado</th></tr></thead>
+      <tbody>
+        @for (rate of history(); track rate.id) {
+          <tr>
+            <td>{{ labels.vehicle[rate.vehicleType] }}</td>
+            <td>{{ labels.band[rate.band] }}</td>
+            <td>{{ formatCop(rate.amountCop) }}</td>
+            <td class="muted">{{ rate.validFrom.slice(0, 16).replace('T', ' ') }}</td>
+            <td><span class="badge" [class.badge-ok]="!rate.validTo">{{ rate.validTo ? 'Reemplazada' : 'Vigente' }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
