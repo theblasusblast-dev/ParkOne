@@ -91,3 +91,52 @@ export interface Spot {
     charge: { amountCop: number; band: Band; status: ChargeStatus } | null;
   } | null;
 }
+
+export interface PayResult {
+  payment: { id: string; reference: string; amountCop: number; paidAt: string };
+  charge: Charge;
+  passValidUntil: string;
+  replayed: boolean;
+}
+
+export interface Page<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+}
+
+export interface EventRow {
+  id: string;
+  occurredAt: string;
+  direction: 'ENTRY' | 'EXIT';
+  plate: string;
+  vehicleType: VehicleType;
+  barrierOpened: boolean;
+  decisionReason: string;
+  manualRead: boolean;
+  foreignPlate: boolean;
+  spotCode: string | null;
+  operatorName: string | null;
+}
+
+export interface ChargeRow {
+  id: string;
+  plate: string;
+  vehicleType: VehicleType;
+  operatingDay: string;
+  band: Band;
+  amountCop: number;
+  status: ChargeStatus;
+  paidAt: string | null;
+}
+
+export interface PaymentRow {
+  id: string;
+  paidAt: string;
+  amountCop: number;
+  reference: string;
+  plate: string;
+  band: Band;
+  receivedByName: string;
+}

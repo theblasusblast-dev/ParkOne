@@ -1,0 +1,112 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Historial</h1>
+    <p class="page-subtitle">Ingresos, salidas, cobros y pagos de {{ site.siteName() }}.</p>
+  </div>
+  <app-site-picker />
+</div>
+
+<div class="segmented" style="margin-bottom: 16px">
+  <button type="button" [class.active]="tab() === 'events'" (click)="setTab('events')">Ingresos y salidas</button>
+  <button type="button" [class.active]="tab() === 'charges'" (click)="setTab('charges')">Cobros</button>
+  <button type="button" [class.active]="tab() === 'payments'" (click)="setTab('payments')">Pagos</button>
+</div>
+
+<form class="toolbar" (ngSubmit)="search(1)">
+  <input name="plate" [ngModel]="plate()" (ngModelChange)="plate.set($event)" placeholder="Placa" />
+  <input name="from" type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" title="Desde" />
+  <input name="to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" title="Hasta" />
+  @if (tab() === 'charges') {
+    <select name="status" [ngModel]="status()" (ngModelChange)="status.set($event)">
+      <option value="">Todos los estados</option>
+      <option value="PENDING">Pendientes</option>
+      <option value="PAID">Pagados</option>
+    </select>
+    <select name="band" [ngModel]="band()" (ngModelChange)="band.set($event)">
+      <option value="">Diurnos y nocturnos</option>
+      <option value="DAY">Diurnos</option>
+      <option value="NIGHT">Nocturnos</option>
+    </select>
+  }
+  <button class="btn btn-primary" type="submit">Filtrar</button>
+</form>
+
+@if (error(); as message) {
+  <div class="alert alert-error">{{ message }}</div>
+}
+
+<div class="card" style="padding: 0; overflow-x: auto">
+  @if (tab() === 'events' && events(); as page) {
+    <table class="table">
+      <thead><tr><th>Fecha</th><th>Sentido</th><th>Placa</th><th>Tipo</th><th>Barrera</th><th>Detalle</th><th>Espacio</th></tr></thead>
+      <tbody>
+        @for (row of page.items; track row.id) {
+          <tr>
+            <td>{{ date(row.occurredAt) }}</td>
+            <td>{{ row.direction === 'ENTRY' ? 'Entrada' : 'Salida' }}</td>
+            <td>
+              <strong>{{ row.plate }}</strong>
+              @if (row.manualRead) { <span class="badge badge-warn" [title]="'Digitada por ' + row.operatorName">Manual</span> }
+              @if (row.foreignPlate) { <span class="badge">Extranjera</span> }
+            </td>
+            <td>{{ labels.vehicle[row.vehicleType] }}</td>
+            <td><span class="badge" [class.badge-ok]="row.barrierOpened" [class.badge-bad]="!row.barrierOpened">{{ row.barrierOpened ? 'Abrió' : 'No abrió' }}</span></td>
+            <td class="muted">{{ row.decisionReason }}</td>
+            <td>{{ row.spotCode ?? '—' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="muted">Sin resultados.</td></tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  @if (tab() === 'charges' && charges(); as page) {
+    <table class="table">
+      <thead><tr><th>Día operativo</th><th>Placa</th><th>Tipo</th><th>Franja</th><th>Valor</th><th>Estado</th><th>Pagado</th></tr></thead>
+      <tbody>
+        @for (row of page.items; track row.id) {
+          <tr>
+            <td>{{ row.operatingDay }}</td>
+            <td><strong>{{ row.plate }}</strong></td>
+            <td>{{ labels.vehicle[row.vehicleType] }}</td>
+            <td>{{ labels.band[row.band] }}</td>
+            <td>{{ formatCop(row.amountCop) }}</td>
+            <td><span class="badge" [class.badge-ok]="row.status === 'PAID'" [class.badge-warn]="row.status === 'PENDING'">{{ labels.charge[row.status] }}</span></td>
+            <td>{{ row.paidAt ? date(row.paidAt) : '—' }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="7" class="muted">Sin resultados.</td></tr>
+        }
+      </tbody>
+    </table>
+  }
+
+  @if (tab() === 'payments' && payments(); as page) {
+    <table class="table">
+      <thead><tr><th>Fecha</th><th>Placa</th><th>Franja</th><th>Valor</th><th>Referencia</th><th>Recibió</th></tr></thead>
+      <tbody>
+        @for (row of page.items; track row.id) {
+          <tr>
+            <td>{{ date(row.paidAt) }}</td>
+            <td><strong>{{ row.plate }}</strong></td>
+            <td>{{ labels.band[row.band] }}</td>
+            <td>{{ formatCop(row.amountCop) }}</td>
+            <td class="muted">{{ row.reference }}</td>
+            <td>{{ row.receivedByName }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="muted">Sin resultados.</td></tr>
+        }
+      </tbody>
+    </table>
+  }
+</div>
+
+@if (current(); as page) {
+  <div class="pager">
+    <span class="muted">{{ page.total }} resultados · página {{ page.page }} de {{ pages() }}</span>
+    <button class="btn btn-ghost" (click)="search(page.page - 1)" [disabled]="page.page <= 1">Anterior</button>
+    <button class="btn btn-ghost" (click)="search(page.page + 1)" [disabled]="page.page >= pages()">Siguiente</button>
+  </div>
+}

@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard, guestGuard } from './core/auth/auth.guards';
+import { Cashier } from './features/cashier/cashier';
+import { History } from './features/history/history';
 import { Home } from './features/home/home';
 import { Lane } from './features/lane/lane';
 import { Login } from './features/login/login';
@@ -16,6 +18,8 @@ export const routes: Routes = [
       { path: 'inicio', component: Home, title: 'Inicio · ParkOne' },
       { path: 'mapa', component: ParkingMap, title: 'Mapa · ParkOne' },
       { path: 'carril', component: Lane, title: 'Carril · ParkOne' },
+      { path: 'caja', component: Cashier, title: 'Caja · ParkOne' },
+      { path: 'historial', component: History, title: 'Historial · ParkOne' },
       { path: '', pathMatch: 'full', redirectTo: 'inicio' },
     ],
   },
