@@ -1,0 +1,101 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Mapa de espacios</h1>
+    <p class="page-subtitle">{{ site.siteName() }} · se actualiza en tiempo real.</p>
+  </div>
+  <app-site-picker />
+</div>
+
+<div class="toolbar">
+  <input class="search" [ngModel]="search()" (ngModelChange)="search.set($event)" placeholder="Buscar placa…" />
+  <select [ngModel]="statusFilter()" (ngModelChange)="statusFilter.set($event)">
+    <option value="">Todos los estados</option>
+    <option value="FREE">Libres</option>
+    <option value="OCCUPIED">Ocupados</option>
+    <option value="DISABLED">Inhabilitados</option>
+  </select>
+  <select [ngModel]="typeFilter()" (ngModelChange)="typeFilter.set($event)">
+    <option value="">Carros y motos</option>
+    <option value="CAR">Solo carros</option>
+    <option value="MOTORCYCLE">Solo motos</option>
+  </select>
+  <div class="legend">
+    <span><i class="dot FREE"></i>Libre</span>
+    <span><i class="dot OCCUPIED"></i>Ocupado</span>
+    <span><i class="dot DISABLED"></i>Inhabilitado</span>
+  </div>
+</div>
+
+@if (error(); as message) {
+  <div class="alert alert-error">{{ message }}</div>
+}
+
+<div class="map-columns">
+  @for (column of [{ title: 'Carros', type: 'CAR', list: cars() }, { title: 'Motos', type: 'MOTORCYCLE', list: motorcycles() }]; track column.type) {
+    @if (!typeFilter() || typeFilter() === column.type) {
+      <section class="card">
+        <div class="column-head">
+          <h3>{{ column.title }}</h3>
+          @for (item of summary(); track item.type) {
+            @if (item.type === column.type) {
+              <span class="muted">{{ item.free }} libres · {{ item.occupied }} ocupados · {{ item.disabled }} inhabilitados</span>
+            }
+          }
+        </div>
+
+        <div class="spot-grid">
+          @for (spot of column.list; track spot.id) {
+            <button
+              type="button"
+              class="spot"
+              [class]="'spot ' + spot.status"
+              [class.match]="matches(spot)"
+              [class.dimmed]="search() && !matches(spot)"
+              [class.selected]="spot.id === selectedId()"
+              (click)="select(spot)"
+            >
+              <span class="code">{{ spot.code }}</span>
+              @if (spot.occupant) {
+                <span class="plate">{{ spot.occupant.plate }}</span>
+              }
+              <span class="tooltip">
+                <strong>{{ spot.code }} · {{ labels.spot[spot.status] }}</strong>
+                @if (spot.occupant; as occupant) {
+                  <span>Placa: {{ occupant.plate }} ({{ labels.vehicle[spot.vehicleType] }})</span>
+                  <span>En uso: {{ formatDuration(occupant.minutesParked) }}</span>
+                  @if (occupant.charge; as charge) {
+                    <span>Cobro: {{ formatCop(charge.amountCop) }} · {{ labels.band[charge.band] }} · {{ labels.charge[charge.status] }}</span>
+                  } @else {
+                    <span>Sin cobro</span>
+                  }
+                } @else if (spot.status === 'DISABLED') {
+                  <span>Motivo: {{ spot.disabledReason }}</span>
+                }
+              </span>
+            </button>
+          } @empty {
+            <p class="muted">No hay espacios con estos filtros.</p>
+          }
+        </div>
+      </section>
+    }
+  }
+</div>
+
+@if (selected(); as spot) {
+  <section class="card spot-panel">
+    <h3>Espacio {{ spot.code }} · {{ labels.spot[spot.status] }}</h3>
+    @if (spot.status === 'FREE') {
+      <div class="field" style="margin-top: 12px">
+        <label for="reason">Motivo para inhabilitarlo</label>
+        <input id="reason" [ngModel]="reason()" (ngModelChange)="reason.set($event)" placeholder="Mantenimiento, charco, reservado…" />
+      </div>
+      <button class="btn btn-danger" (click)="change('DISABLED')">Inhabilitar espacio</button>
+    } @else if (spot.status === 'DISABLED') {
+      <p class="muted">Motivo: {{ spot.disabledReason }}</p>
+      <button class="btn btn-primary" (click)="change('FREE')">Habilitar espacio</button>
+    } @else if (spot.occupant; as occupant) {
+      <p class="muted">Ocupado por {{ occupant.plate }} hace {{ formatDuration(occupant.minutesParked) }}. Se libera cuando el vehículo sale.</p>
+    }
+  </section>
+}
