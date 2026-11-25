@@ -1,0 +1,25 @@
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><span class="logo">P</span> ParkOne</div>
+
+    <nav class="nav">
+      @for (link of links(); track link.path) {
+        <a [routerLink]="link.path" routerLinkActive="active">
+          <span aria-hidden="true">{{ link.icon }}</span> {{ link.label }}
+        </a>
+      }
+    </nav>
+
+    @if (auth.user(); as user) {
+      <div class="user-card">
+        <div class="name">{{ user.fullName }}</div>
+        <div class="muted">{{ roleLabel() }}{{ user.site ? ' · ' + user.site.name : '' }}</div>
+        <button class="btn btn-ghost btn-block" style="margin-top: 10px" (click)="auth.logout()">Cerrar sesión</button>
+      </div>
+    }
+  </aside>
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>
