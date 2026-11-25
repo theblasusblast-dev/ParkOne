@@ -34,6 +34,7 @@ Proyecto académico de Ingeniería de Software II, UAM.
 ```
 backend/    API REST
 frontend/   Aplicación web
+database/   Script SQL completo (estructura y datos iniciales)
 docs/       Documentación técnica y académica
 ```
 
@@ -51,24 +52,45 @@ Ningún cambio entra directo a `main` ni a `develop`.
 - Código, nombres de ramas y alcance de los commits en inglés; interfaz y documentación en español.
 - Commits con Conventional Commits y la historia al final, por ejemplo `feat(billing): genera cobro nocturno (HU-06)`.
 
-## Cómo ejecutar (desarrollo)
+## Cómo ejecutar
 
-Requisitos: Node.js 20.19 o superior, Docker Desktop abierto.
+### Opción 1: todo con Docker (entrega y demo)
 
-1. Variables de entorno: copiar los archivos de ejemplo.
+Requisito: Docker Desktop abierto.
+
+```
+copy .env.example .env
+docker compose up -d --build
+```
+
+Antes del segundo comando, cambia `JWT_SECRET` en `.env` por un texto aleatorio de al menos 32 caracteres. La primera vez tarda unos minutos mientras construye las imágenes.
+
+| Servicio | Dirección |
+| --- | --- |
+| Aplicación web | http://localhost:8080 |
+| API y Swagger | http://localhost:4000/docs |
+| PostgreSQL | localhost:5433 |
+
+Al arrancar, la API aplica las migraciones y carga los datos iniciales. Para detener todo: `docker compose down`. Para borrar también los datos: `docker compose down -v`.
+
+### Opción 2: desarrollo
+
+Requisitos: Node.js 20.19 o superior y Docker Desktop abierto.
+
+1. Variables de entorno:
 
    ```
    copy .env.example .env
    copy backend\.env.example backend\.env
    ```
 
-2. Base de datos (PostgreSQL 16 en Docker):
+2. Solo la base de datos en Docker:
 
    ```
-   docker compose up -d
+   docker compose up -d db
    ```
 
-3. API (en otra terminal):
+3. API (terminal 2):
 
    ```
    cd backend
@@ -78,9 +100,25 @@ Requisitos: Node.js 20.19 o superior, Docker Desktop abierto.
    npm run dev
    ```
 
-   `db:migrate` crea las tablas y `db:seed` carga una sede de prueba con sus espacios, tarifas y usuarios.
+4. Frontend (terminal 3):
 
-La API queda en `http://localhost:4000` y la documentación interactiva (Swagger) en `http://localhost:4000/docs`.
+   ```
+   cd frontend
+   npm install
+   npx ng serve
+   ```
+
+La aplicación queda en http://localhost:4200 y la API en http://localhost:4000/docs. No uses las dos opciones a la vez: ambas usan el puerto 4000.
+
+### Script SQL
+
+`database/parkone.sql` crea toda la base de datos (tablas, restricciones e índices) y carga los mismos datos iniciales, sin necesidad de Prisma:
+
+```
+docker exec -i parkone-db psql -U parkone -d parkone < database\parkone.sql
+```
+
+Se ejecuta sobre una base de datos vacía.
 
 ## Usuarios de prueba
 
@@ -98,6 +136,7 @@ Los crea `npm run db:seed`:
 | `npm run db:migrate` | Aplica las migraciones pendientes y regenera el cliente de Prisma. |
 | `npm run db:seed` | Carga los datos de prueba. Se puede repetir sin duplicar nada. |
 | `npm run db:studio` | Abre Prisma Studio en el navegador para ver y editar los registros. |
+| `npm run db:reset` | Borra todos los datos y deja la base como recién instalada (útil antes de la demo). |
 
 ## Pruebas automatizadas
 
@@ -111,4 +150,4 @@ Ejecuta 27 pruebas sin base de datos (repositorios en memoria y reloj simulado):
 
 ## Estado
 
-En construcción: base del backend lista; los módulos de negocio se agregan historia por historia.
+Versión 1.0.0 en preparación: todas las funcionalidades obligatorias (F-01 a F-10) están implementadas.
