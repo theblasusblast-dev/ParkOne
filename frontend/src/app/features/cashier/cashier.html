@@ -1,0 +1,52 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">Caja</h1>
+    <p class="page-subtitle">Busca la placa y registra el pago en efectivo.</p>
+  </div>
+  <app-site-picker />
+</div>
+
+<form class="card cashier-search" (ngSubmit)="search()">
+  <div class="field" style="margin: 0; flex: 1">
+    <label for="plate">Placa</label>
+    <input id="plate" name="plate" [ngModel]="plate()" (ngModelChange)="plate.set($event)" placeholder="ABC123" autocomplete="off" />
+  </div>
+  <button class="btn btn-primary" type="submit" [disabled]="!plate().trim()">Buscar</button>
+</form>
+
+@if (success(); as message) {
+  <div class="alert alert-success" style="margin-top: 16px">{{ message }}</div>
+}
+@if (error(); as message) {
+  <div class="alert alert-error" style="margin-top: 16px">{{ message }}</div>
+}
+
+@if (searched(); as plate) {
+  <div style="margin-top: 16px">
+    @for (item of pending(); track item.charge.id) {
+      <div class="card charge-card">
+        <div>
+          <div class="muted">Cobro {{ bandLabel[item.charge.band].toLowerCase() }} · día operativo {{ item.charge.operatingDay }}</div>
+          <div class="charge-amount">{{ formatCop(item.charge.amountCop) }}</div>
+          <span class="badge badge-warn">Pendiente</span>
+        </div>
+        @if (confirmingId() === item.charge.id) {
+          <div class="confirm">
+            <span>¿Recibiste {{ formatCop(item.charge.amountCop) }} en efectivo?</span>
+            <button class="btn btn-primary" (click)="pay(item)" [disabled]="busy()">Sí, registrar pago</button>
+            <button class="btn btn-ghost" (click)="confirmingId.set(null)">Cancelar</button>
+          </div>
+        } @else {
+          <button class="btn btn-primary" (click)="confirmingId.set(item.charge.id)">Registrar pago en efectivo</button>
+        }
+      </div>
+    } @empty {
+      @if (!success()) {
+        <div class="card">
+          <h3>Sin cobros pendientes</h3>
+          <p class="muted">La placa {{ plate }} no debe nada en esta sede: puede salir.</p>
+        </div>
+      }
+    }
+  </div>
+}
