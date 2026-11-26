@@ -11,6 +11,8 @@ export interface SiteRatesView extends SiteBands {
   rates: Rate[];
 }
 
+const VEHICLE_NAME: Record<RatePair['vehicleType'], string> = { CAR: 'carro', MOTORCYCLE: 'moto' };
+
 const siteNotFound = () => new AppError(404, 'SITE_NOT_FOUND', 'No existe una sede con ese id.');
 
 /** Tarifas vigentes y franjas de una sede. El empleado solo ve las de su sede. */
@@ -52,7 +54,7 @@ export class UpdateSiteRatesUseCase {
       throw new AppError(
         400,
         'RATE_RULE_VIOLATION',
-        `La tarifa nocturna de ${broken.vehicleType} debe ser menor que la diurna (RN-02).`,
+        `La tarifa nocturna de ${VEHICLE_NAME[broken.vehicleType]} debe ser menor que la diurna (RN-02).`,
       );
     }
 

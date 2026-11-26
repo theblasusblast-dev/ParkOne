@@ -14,7 +14,10 @@ import { attachRealtime } from './infrastructure/realtime/realtime';
 const events = new InMemoryEventBus();
 const app = createApp(events);
 
-const server = app.listen(env.PORT, () => {
+// En Express 5 este callback también se llama cuando el arranque falla (con el
+// error como argumento); en ese caso el manejador 'error' de abajo informa la causa.
+const server = app.listen(env.PORT, (error?: Error) => {
+  if (error) return;
   console.log(`${APP_INFO.name} v${APP_INFO.version} escuchando en http://localhost:${env.PORT}`);
   console.log(`Documentación: http://localhost:${env.PORT}/docs`);
   console.log(`Monitor de barrera: http://localhost:${env.PORT}/monitor?siteId=<id de la sede>`);
